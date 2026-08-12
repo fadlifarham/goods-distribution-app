@@ -19,53 +19,11 @@ import { useState, useEffect, useRef } from "react";
 
 const API_BASE_URL = import.meta.env.API_BASE_URL || "http://localhost:3000";
 
-const PRODUCT_OPTIONS = [
-  "Masker N95",
-  "Masker Bedah",
-  "Sarung Tangan Latex",
-  "Hand Sanitizer",
-  "Alkohol Swab",
-  "Kapas",
-  "Kasa Steril",
-  "Plester",
-  "Spuit / Jarum Suntik",
-  "Termometer",
-  "Paracetamol",
-  "Amoxicillin",
-  "Vitamin C",
-  "Cairan Infus (RL)",
-  "APD (Alat Pelindung Diri)",
-];
+const PRODUCT_OPTIONS = [];
 
-const UNIT_OPTIONS = [
-  "Poli Umum",
-  "Poli Gigi",
-  "Poli KIA/KB",
-  "UGD / IGD",
-  "Apotek / Farmasi",
-  "Laboratorium",
-  "Ruang Gizi",
-  "Ruang Imunisasi",
-  "Rekam Medis",
-  "Loket Pendaftaran",
-  "Pustu",
-  "Polindes",
-  "Poskesdes",
-  "Tata Usaha",
-];
+const UNIT_OPTIONS = [];
 
-const RECEIVER_OPTIONS = [
-  "Fadli",
-  "Rina",
-  "Siti",
-  "Budi",
-  "Andi",
-  "Dewi",
-  "Rudi",
-  "Tina",
-  "Agus",
-  "Lina",
-];
+const RECEIVER_OPTIONS = [];
 
 // ====================================================================
 // GOOGLE SHEETS INTEGRATION (PLACEHOLDER — wire these up later)
