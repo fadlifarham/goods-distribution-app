@@ -18,7 +18,12 @@ import { useState, useEffect, useRef } from "react";
 // });
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+  import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "";
+
+const makeApiUrl = (path) => {
+  const base = API_BASE_URL.replace(/\/+$/, "");
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+};
 
 const PRODUCT_OPTIONS = [];
 
@@ -56,19 +61,19 @@ async function fetchDropdownOptionsFromSheet(listName) {
   let results;
 
   if (listName === "products") {
-    const res = await fetch(`${API_BASE_URL}/api/products`);
+    const res = await fetch(makeApiUrl("/api/products"));
     if (!res.ok) throw new Error(`Failed to fetch ${listName} options`);
     const data = await res.json();
 
     results = data.map((item) => item.name);
   } else if (listName === "units") {
-    const res = await fetch(`${API_BASE_URL}/api/unit-receivers`);
+    const res = await fetch(makeApiUrl("/api/unit-receivers"));
     if (!res.ok) throw new Error(`Failed to fetch ${listName} options`);
     const data = await res.json();
 
     results = data.map((item) => item.name);
   } else if (listName === "receivers") {
-    const res = await fetch(`${API_BASE_URL}/api/people-receivers`);
+    const res = await fetch(makeApiUrl("/api/people-receivers"));
     if (!res.ok) throw new Error(`Failed to fetch ${listName} options`);
     const data = await res.json();
 
@@ -106,7 +111,7 @@ async function fetchDropdownOptionsFromSheet(listName) {
 // line items) to Google Sheets, one row per product line.
 async function submitSlipToSheet(slip) {
   // TODO: implement the real request, e.g.:
-  const res = await fetch(`${API_BASE_URL}/api/distribute`, {
+  const res = await fetch(makeApiUrl("/api/distribute"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(slip),
