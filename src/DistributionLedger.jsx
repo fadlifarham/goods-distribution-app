@@ -129,7 +129,13 @@ async function submitSlipToSheet(slip) {
 let itemUid = 0;
 const newItem = () => ({ uid: `item-${itemUid++}`, product: "", qty: "" });
 
-function OptionCombobox({ value, options, onSelectOption, placeholder }) {
+function OptionCombobox({
+  value,
+  options,
+  onSelectOption,
+  placeholder,
+  isLoading,
+}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const wrapperRef = useRef(null);
@@ -163,6 +169,7 @@ function OptionCombobox({ value, options, onSelectOption, placeholder }) {
         className="field-input"
         placeholder={placeholder}
         value={displayValue}
+        style={{ paddingRight: isLoading ? 34 : undefined }}
         onFocus={() => {
           setOpen(true);
           setQuery("");
@@ -172,6 +179,7 @@ function OptionCombobox({ value, options, onSelectOption, placeholder }) {
           setOpen(true);
         }}
       />
+      {isLoading && <div className="spinner" aria-hidden="true" />}
       {open && (
         <div className="combo-list">
           {filtered.length === 0 ? (
@@ -196,7 +204,7 @@ function OptionCombobox({ value, options, onSelectOption, placeholder }) {
   );
 }
 
-function NameCombobox({ value, onChange, options, placeholder }) {
+function NameCombobox({ value, onChange, options, placeholder, isLoading }) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
 
@@ -221,12 +229,14 @@ function NameCombobox({ value, onChange, options, placeholder }) {
         className="field-input"
         placeholder={placeholder}
         value={value}
+        style={{ paddingRight: isLoading ? 34 : undefined }}
         onFocus={() => setOpen(true)}
         onChange={(e) => {
           onChange(e.target.value);
           setOpen(true);
         }}
       />
+      {isLoading && <div className="spinner" aria-hidden="true" />}
       {open && filtered.length > 0 && (
         <div className="combo-list">
           {filtered.map((opt) => (
@@ -261,20 +271,53 @@ export default function DistributionLedger() {
   const [productOptions, setProductOptions] = useState(PRODUCT_OPTIONS);
   const [unitOptions, setUnitOptions] = useState(UNIT_OPTIONS);
   const [receiverOptions, setReceiverOptions] = useState(RECEIVER_OPTIONS);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [loadingUnits, setLoadingUnits] = useState(false);
+  const [loadingReceivers, setLoadingReceivers] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadDropdownData() {
-      const [products, units, receivers] = await Promise.all([
-        fetchDropdownOptionsFromSheet("products"),
-        fetchDropdownOptionsFromSheet("units"),
-        fetchDropdownOptionsFromSheet("receivers"),
-      ]);
-      if (cancelled) return;
-      if (products) setProductOptions(products);
-      if (units) setUnitOptions(units);
-      if (receivers) setReceiverOptions(receivers);
+      setLoadingProducts(true);
+      setLoadingUnits(true);
+      setLoadingReceivers(true);
+
+      try {
+        const products = await fetchDropdownOptionsFromSheet("products").catch(
+          (err) => {
+            console.error("fetch products failed:", err);
+            return null;
+          },
+        );
+        if (!cancelled && products) setProductOptions(products);
+      } finally {
+        if (!cancelled) setLoadingProducts(false);
+      }
+
+      try {
+        const units = await fetchDropdownOptionsFromSheet("units").catch(
+          (err) => {
+            console.error("fetch units failed:", err);
+            return null;
+          },
+        );
+        if (!cancelled && units) setUnitOptions(units);
+      } finally {
+        if (!cancelled) setLoadingUnits(false);
+      }
+
+      try {
+        const receivers = await fetchDropdownOptionsFromSheet(
+          "receivers",
+        ).catch((err) => {
+          console.error("fetch receivers failed:", err);
+          return null;
+        });
+        if (!cancelled && receivers) setReceiverOptions(receivers);
+      } finally {
+        if (!cancelled) setLoadingReceivers(false);
+      }
     }
 
     loadDropdownData();
@@ -410,6 +453,22 @@ export default function DistributionLedger() {
           overflow-y: auto;
           z-index: 30;
         }
+        .spinner {
+          position: absolute;
+          right: 8px;
+          top: 8px;
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(0,0,0,0.08);
+          border-top-color: #1b4332;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+          z-index: 40;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
         .combo-option {
           font-family: 'JetBrains Mono', monospace;
           font-size: 12px;
@@ -442,6 +501,17 @@ export default function DistributionLedger() {
         }
         .submit-btn:hover {
           background: #163a2a;
+        }
+        .btn-spinner {
+          display: inline-block;
+          vertical-align: middle;
+          margin-left: 10px;
+          width: 12px;
+          height: 12px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: #ffffff;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
         }
 
         .add-row-btn {
@@ -613,6 +683,7 @@ export default function DistributionLedger() {
               <OptionCombobox
                 value={header.unit}
                 options={unitOptions}
+                isLoading={loadingUnits}
                 onSelectOption={handleUnitSelect}
                 placeholder="Search unit\u2026"
               />
@@ -624,6 +695,7 @@ export default function DistributionLedger() {
                 value={header.receiver}
                 onChange={handleHeaderValueChange("receiver")}
                 options={receiverSuggestions}
+                isLoading={loadingReceivers}
                 placeholder="Search or type full name"
               />
             </label>
@@ -645,6 +717,7 @@ export default function DistributionLedger() {
                   <OptionCombobox
                     value={it.product}
                     options={productOptions}
+                    isLoading={loadingProducts}
                     onSelectOption={handleProductSelect(it.uid)}
                     placeholder="Search product\u2026"
                   />
@@ -681,8 +754,14 @@ export default function DistributionLedger() {
           {error && <div style={styles.error}>{error}</div>}
 
           <div className="actions" style={styles.actions}>
-            <button type="submit" className="submit-btn">
+            <button
+              type="submit"
+              className="submit-btn"
+              disabled={syncStatus === "saving"}
+              aria-busy={syncStatus === "saving"}
+            >
               Record Slip
+              {syncStatus === "saving" && <span className="btn-spinner" />}
             </button>
             <span style={styles.count}>
               {slips.length} {slips.length === 1 ? "slip" : "slips"} recorded
