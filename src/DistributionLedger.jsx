@@ -486,6 +486,11 @@ export default function DistributionLedger() {
           color: #a89f8c;
         }
 
+        /* Hide labels for additional rows on wide screens; show on mobile */
+        .row-label {
+          display: none;
+        }
+
         .submit-btn {
           font-family: 'JetBrains Mono', monospace;
           letter-spacing: 0.08em;
@@ -650,6 +655,11 @@ export default function DistributionLedger() {
           .actions span {
             text-align: center;
           }
+          /* show labels for additional rows on small screens */
+          .row-label {
+            display: block;
+            margin-bottom: 6px;
+          }
         }
       `}</style>
 
@@ -711,9 +721,12 @@ export default function DistributionLedger() {
             {items.map((it, idx) => (
               <div key={it.uid} className="item-row">
                 <label className="item-product" style={styles.label}>
-                  {idx === 0 && (
-                    <span style={styles.labelText}>Product Name</span>
-                  )}
+                  <span
+                    style={styles.labelText}
+                    className={idx === 0 ? undefined : "row-label"}
+                  >
+                    Product Name
+                  </span>
                   <OptionCombobox
                     value={it.product}
                     options={productOptions}
@@ -723,7 +736,12 @@ export default function DistributionLedger() {
                   />
                 </label>
                 <label className="item-qty" style={styles.label}>
-                  {idx === 0 && <span style={styles.labelText}>Qty</span>}
+                  <span
+                    style={styles.labelText}
+                    className={idx === 0 ? undefined : "row-label"}
+                  >
+                    Qty
+                  </span>
                   <input
                     type="number"
                     min="0"
